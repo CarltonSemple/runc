@@ -274,7 +274,7 @@ func (p *initProcess) start() error {
 	// we won't know at checkpoint time which file descriptor to look up.
 	fds, err := getPipeFds(p.pid())
 	if err != nil {
-		return newSystemErrorWithCausef(err, "getting pipe fds for pid %d", p.pid())
+		return newSystemErrorWithCausef(err, "no no! getting pipe fds for pid %d", p.pid())
 	}
 	p.setExternalDescriptors(fds)
 	// Do this before syncing with child so that no children

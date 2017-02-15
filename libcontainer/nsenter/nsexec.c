@@ -409,25 +409,75 @@ void join_namespaces(char *nslist)
 	free(namespaces);
 }
 
+
+/* COMMENT(brauner): Check if we are running inside a user namespace. */
+bool am_in_userns()
+{
+	char *line = NULL;
+	size_t sz = 0;
+	uid_t nsid = 0, hostid = 0, range = 4294967295;
+	FILE *f;
+
+	f = fopen("/proc/self/uid_map", "r");
+	if (!f)
+		return false;
+
+	if (getline(&line, &sz, f) < 0)
+		return false;
+
+	(void)sscanf(line, "%u %u %u", &nsid, &hostid, &range);
+
+	if (nsid == 0 && hostid == 0 && range == 4294967295)
+		return true;
+
+	fclose(f);
+	free(line);
+	
+	return true;
+}
+
 void nsexec(void)
 {
+	/*
 	int pipenum;
 	jmp_buf env;
 	int syncpipe[2];
 	struct nlconfig_t config = {0};
 
-	/*
-	 * If we don't have an init pipe, just return to the go routine.
-	 * We'll only get an init pipe for start or exec.
-	 */
+	// If we don't have an init pipe, just return to the go routine.
+	// We'll only get an init pipe for start or exec.
 	pipenum = initpipe();
 	if (pipenum == -1)
 		return;
 
-	/* make the process non-dumpable */
+	// make the process non-dumpable 
 	if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0) {
 		bail("failed to set process as non-dumpable");
-	}
+	}*/
+	
+	int pipenum;
+ 	jmp_buf env;
+	int syncpipe[2] = {0};
+ 	struct nlconfig_t config = {0};
+ 
+ 	if (pipenum == -1)
+ 		return;
+ 
+//	/* make the process non-dumpable */
+//	if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0) {
+//		bail("failed to set process as non-dumpable");
+	/* COMMENT(brauner): Only set us undumpable when we are not in a user
+	 * namespace. This is needed to make runC work in unprivileged LXD. This
+	 * is needed until
+	 * https://lists.linuxfoundation.org/pipermail/containers/2017-January/037759.html
+	 * is merged and backported.
+	 */
+	if (!am_in_userns()) {
+		/* make the process non-dumpable */
+		if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0) {
+			bail("failed to set process as non-dumpable");
+		}
+ 	}
 
 	/* Parse all of the netlink configuration. */
 	nl_parse(pipenum, &config);
