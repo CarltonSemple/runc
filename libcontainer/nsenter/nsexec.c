@@ -459,6 +459,10 @@ void nsexec(void)
  	jmp_buf env;
 	int syncpipe[2] = {0};
  	struct nlconfig_t config = {0};
+	
+	pipenum = initpipe();
+	if (pipenum == -1)
+		return;
  
 	/* COMMENT(brauner): Only set us undumpable when we are not in a user
 	 * namespace. This is needed to make runC work in unprivileged LXD. This
@@ -472,8 +476,6 @@ void nsexec(void)
 			bail("failed to set process as non-dumpable");
 		}
  	}
-	
-	pipenum = initpipe();
 	
 	/* Parse all of the netlink configuration. */
 	nl_parse(pipenum, &config);
