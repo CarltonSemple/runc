@@ -420,6 +420,32 @@ void join_namespaces(char *nslist)
 	free(namespaces);
 }
 
+/* COMMENT(brauner): Check if we are running inside a user namespace. */
+bool am_in_userns()
+{
+	char *line = NULL;
+	size_t sz = 0;
+	uid_t nsid = 0, hostid = 0, range = 4294967295;
+	FILE *f;
+
+	f = fopen("/proc/self/uid_map", "r");
+	if (!f)
+		return false;
+
+	if (getline(&line, &sz, f) < 0)
+		return false;
+
+	(void)sscanf(line, "%u %u %u", &nsid, &hostid, &range);
+
+	if (nsid == 0 && hostid == 0 && range == 4294967295)
+		return true;
+
+	fclose(f);
+	free(line);
+	
+	return true;
+}
+
 void nsexec(void)
 {
 	int pipenum;
