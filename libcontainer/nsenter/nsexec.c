@@ -424,7 +424,7 @@ void nsexec(void)
 {
 	int pipenum;
 	jmp_buf env;
-	int syncpipe[2];
+	int syncpipe[2] = {0};
 	struct nlconfig_t config = {0};
 
 	/*
@@ -435,10 +435,12 @@ void nsexec(void)
 	if (pipenum == -1)
 		return;
 
-	/* make the process non-dumpable */
-	if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0) {
-		bail("failed to set process as non-dumpable");
-	}
+	if (!am_in_userns()) {
+		/* make the process non-dumpable */
+		if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0) {
+			bail("failed to set process as non-dumpable");
+		}
+ 	}
 
 	/* Parse all of the netlink configuration. */
 	nl_parse(pipenum, &config);
