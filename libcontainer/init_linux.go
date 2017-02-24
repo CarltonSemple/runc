@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
+	//"io/ioutil"
 	"net"
 	"os"
-	"strconv"
+	//"strconv"
 	"strings"
 	"syscall"
 
@@ -330,9 +330,12 @@ func setupRlimits(limits []configs.Rlimit, pid int) error {
 }
 
 func setOomScoreAdj(oomScoreAdj int, pid int) error {
+	/*
 	path := fmt.Sprintf("/proc/%d/oom_score_adj", pid)
 
 	return ioutil.WriteFile(path, []byte(strconv.Itoa(oomScoreAdj)), 0600)
+	*/
+	return nil
 }
 
 // signalAllProcesses freezes then iterates over all the processes inside the
