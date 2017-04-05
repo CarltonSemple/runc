@@ -332,16 +332,17 @@ func setupRlimits(limits []configs.Rlimit, pid int) error {
 func setOomScoreAdj(oomScoreAdj int, pid int) error {
 	path := fmt.Sprintf("/proc/%d/oom_score_adj", pid)
 
-	// If there's a permission error, continue. See https://github.com/lxc/lxd/issues/2994 .
-	// In unprivileged LXD containers, this isn't allowed due to a kernel restriction.
-	if err := ioutil.WriteFile(path, []byte(strconv.Itoa(oomScoreAdj)), 0600); err != nil {
-		if os.IsPermission(err) {
-			logrus.Warn(err)
-		} else {
-			return err
-		}
-	}
-	return nil
+        // If there's a permission error, continue. In unprivileged LXD containers, this isn't allowed.
+        // See https://github.com/lxc/lxd/issues/2994 .
+        if err := ioutil.WriteFile(path, []byte(strconv.Itoa(oomScoreAdj)), 0600); err != nil {
+                if os.IsPermission(err) {
+                        if !system.RunningInUserNS() {
+                                logrus.Warn("Permission denied writing %q to %s", oomScoreAdj, path)
+                        }
+                        return nil
+                }
+        }
+        return nil
 }
 
 // signalAllProcesses freezes then iterates over all the processes inside the
